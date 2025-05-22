@@ -4,7 +4,7 @@ set_languages("c++23")
 set_encodings("utf-8")
 
 -- only uses emcc to build wasm
-target("pltxt2htm") do
+target("pltxt2htm", function()
     set_plat("wasm")
     set_kind("binary")
     add_files("pltxt2htm.cc")

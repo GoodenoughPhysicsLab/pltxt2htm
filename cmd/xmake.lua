@@ -4,8 +4,6 @@ includes("../xmake/*.lua")
 set_languages("c++23")
 set_encodings("utf-8")
 
-option("sysroot")
-
 target("pltxt2htm", function()
     set_kind("binary")
     add_files("main.cc")
@@ -25,6 +23,7 @@ target("pltxt2htm", function()
         add_cxxflags("-fno-ident", {tools = {"clang", "gcc"}})
     elseif is_mode("debug") then
         set_warnings("all")
+        set_warnings("extra")
     end
 
     -- get compiler name
