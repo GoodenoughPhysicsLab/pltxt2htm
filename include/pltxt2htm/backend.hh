@@ -24,7 +24,6 @@ namespace details {
  * @brief Integrate ast nodes to HTML.
  * @tparam ndebug: true  -> release mode, disables most of the checks which is unsafe but fast
  *                 false -> debug mode, enables most of the checks
- * @tparam disable_log: true -> no any info printed before crashing
  * @tparam T: you should not pass this param because the compiler can infer it automatically.
  * @note tparam T should not be marked const, that's the reason why I use `remove_reference_t`
  * @param [in] ast: Ast of Quantum-Physics's text
@@ -33,25 +32,19 @@ namespace details {
                                  the current node is the root node (no parent node).
  * @param [in] extern_node: The pointer of parent node
  */
-template<BackendText backend_text, bool ndebug, bool disable_log>
+template<BackendText backend_text, bool ndebug>
 [[nodiscard]]
 constexpr auto ast2html(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltxt2htm::PlTxtNode>> const& ast,
                         ::fast_io::u8string_view host,
                         ::pltxt2htm::NodeType const extern_node_type = ::pltxt2htm::NodeType::base,
-                        ::pltxt2htm::PlTxtNode const* const extern_node = nullptr) noexcept(disable_log == true)
+                        ::pltxt2htm::PlTxtNode const* const extern_node = nullptr)
+#ifndef PLTXT2HTM_ENABLE_PRINT
+    noexcept
+#endif
     -> ::fast_io::u8string {
-    if constexpr (ndebug == false || disable_log == false) {
-        // Checkout whether extern_node_type is a valid type info for ptr extern_node
-        if ((extern_node_type != ::pltxt2htm::NodeType::base && extern_node == nullptr) ||
-            (extern_node_type == ::pltxt2htm::NodeType::base && extern_node != nullptr)) [[unlikely]] {
-            if constexpr (disable_log == false) {
-                // panic_print
-            }
-            if constexpr (ndebug == false) {
-                ::exception::terminate();
-            }
-        }
-    }
+    // Checkout whether extern_node_type is a valid type info for ptr extern_node
+    pltxt2htm_assert((extern_node_type == ::pltxt2htm::NodeType::base && extern_node == nullptr) ||
+                     (extern_node_type == ::pltxt2htm::NodeType::base && extern_node == nullptr));
     ::fast_io::u8string result{};
 
     for (auto&& node : ast) {
@@ -96,8 +89,8 @@ constexpr auto ast2html(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltx
                 result.append(color->get_color());
                 result.append(u8";\">");
             }
-            result.append(::pltxt2htm::details::ast2html<backend_text, ndebug, disable_log>(
-                color->get_subast(), host, ::pltxt2htm::NodeType::color, color));
+            result.append(::pltxt2htm::details::ast2html<backend_text, ndebug>(color->get_subast(), host,
+                                                                               ::pltxt2htm::NodeType::color, color));
             if (is_not_same_tag) {
                 result.append(u8"</span>");
             }
@@ -119,7 +112,7 @@ constexpr auto ast2html(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltx
                 result.append(experiment->get_id());
                 result.append(u8"\" internal>");
             }
-            result.append(::pltxt2htm::details::ast2html<backend_text, ndebug, disable_log>(
+            result.append(::pltxt2htm::details::ast2html<backend_text, ndebug>(
                 experiment->get_subast(), host, ::pltxt2htm::NodeType::experiment, experiment));
             if (is_not_same_tag) {
                 result.append(u8"</a>");
@@ -142,7 +135,7 @@ constexpr auto ast2html(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltx
                 result.append(discussion->get_id());
                 result.append(u8"\" internal>");
             }
-            result.append(::pltxt2htm::details::ast2html<backend_text, ndebug, disable_log>(
+            result.append(::pltxt2htm::details::ast2html<backend_text, ndebug>(
                 discussion->get_subast(), host, ::pltxt2htm::NodeType::discussion, discussion));
             if (is_not_same_tag) {
                 result.append(u8"</a>");
@@ -207,7 +200,6 @@ constexpr auto ast2html(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltx
  * @brief Integrate ast nodes to HTML.
  * @tparam ndebug: true  -> release mode, disables most of the checks which is unsafe but fast
  *                 false -> debug mode, enables most of the checks
- * @tparam disable_log: true -> no any info printed before crashing
  * @tparam T: you should not pass this param because the compiler can infer it automatically.
  * @note tparam T should not be marked const, that's the reason why I use `remove_reference_t`
  * @tparam backend_text: text type that backend generates
@@ -215,11 +207,15 @@ constexpr auto ast2html(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltx
  * @param [in] host: host of plweb
  * @return generated backend text
  */
-template<BackendText backend_text, bool ndebug, bool disable_log>
+template<BackendText backend_text, bool ndebug>
 [[nodiscard]]
 constexpr auto ast2html(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltxt2htm::PlTxtNode>> const& ast,
-                        ::fast_io::u8string_view host) noexcept(disable_log == true) -> ::fast_io::u8string {
-    return ::pltxt2htm::details::ast2html<backend_text, ndebug, disable_log>(ast, host);
+                        ::fast_io::u8string_view host)
+#ifndef PLTXT2HTM_ENABLE_PRINT
+    noexcept
+#endif
+    -> ::fast_io::u8string {
+    return ::pltxt2htm::details::ast2html<backend_text, ndebug>(ast, host);
 }
 
 } // namespace pltxt2htm

@@ -48,7 +48,8 @@ int main() noexcept {
     ::exception::assert_true(::std::memcmp(html9.data(), answer9, html4.size()) == 0);
 
     auto html10 = ::pltxt2htm::pltxt2html(u8"<color=red>text<Color=#66ccff>text</color></color>", u8"localhost:5173");
-    auto answer10 = ::fast_io::u8string_view{u8"<span style=\"color:red;\">text<span style=\"color:#66ccff;\">text</span></span>"};
+    auto answer10 =
+        ::fast_io::u8string_view{u8"<span style=\"color:red;\">text<span style=\"color:#66ccff;\">text</span></span>"};
     ::exception::assert_true(html10 == answer10);
 
     auto html11 = ::pltxt2htm::pltxt2html(u8"<color=", u8"localhost:5173");

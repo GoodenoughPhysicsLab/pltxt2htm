@@ -1,3 +1,7 @@
+#ifndef NDEBUG
+    #define PLTXT2HTM_ENABLE_PRINT
+#endif
+
 #include <cstddef>
 #include <cstring>
 #include <cassert>
@@ -129,9 +133,9 @@ int main(int argc, char const* const* const argv)
         // TODO can select BackendText in cmd interface
         auto html = ::pltxt2htm::pltxt2html<
 #ifdef NDEBUG
-            ::pltxt2htm::BackendText::advanced_html, true, true
+            ::pltxt2htm::BackendText::advanced_html, true
 #else
-            ::pltxt2htm::BackendText::advanced_html, false, false
+            ::pltxt2htm::BackendText::advanced_html, false
 #endif
             >(::fast_io::mnp::os_c_str(reinterpret_cast<char8_t const*>(loader.data())),
               ::fast_io::mnp::os_c_str(host));

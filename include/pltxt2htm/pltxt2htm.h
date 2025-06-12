@@ -37,12 +37,16 @@ constexpr char8_t const* c_ptr_style_wrapper(char8_t const* const text, char8_t 
  * @brief C-Pointer-Style interface for C++ API pltxt2htm::pltxt2html <::pltxt2htm::BackendText::advanced_html>
  * @note Don't forget to free the returned pointer
  */
-template<bool ndebug = false, bool disable_log = true>
+template<bool ndebug = false>
 [[nodiscard]]
 constexpr char8_t const* advanced_parser(char8_t const* const text,
-                                         char8_t const* const host) noexcept(disable_log == true) {
+                                         char8_t const* const host)
+#ifndef PLTXT2HTM_ENABLE_PRINT
+    noexcept
+#endif
+{
     return ::pltxt2htm::details::c_ptr_style_wrapper<
-        ::pltxt2htm::pltxt2html<::pltxt2htm::BackendText::advanced_html, ndebug, disable_log>>(text, host);
+        ::pltxt2htm::pltxt2html<::pltxt2htm::BackendText::advanced_html, ndebug>>(text, host);
 }
 
 /**
@@ -52,9 +56,13 @@ constexpr char8_t const* advanced_parser(char8_t const* const text,
 template<bool ndebug = false, bool disable_log = true>
 [[nodiscard]]
 constexpr char8_t const* common_parser(char8_t const* const text,
-                                       char8_t const* const host) noexcept(disable_log == true) {
+                                       char8_t const* const host)
+#ifndef PLTXT2HTM_ENABLE_PRINT
+    noexcept
+#endif
+{
     return ::pltxt2htm::details::c_ptr_style_wrapper<
-        ::pltxt2htm::pltxt2html<::pltxt2htm::BackendText::common_html, ndebug, disable_log>>(text, host);
+        ::pltxt2htm::pltxt2html<::pltxt2htm::BackendText::common_html, ndebug>>(text, host);
 }
 
 } // namespace pltxt2htm

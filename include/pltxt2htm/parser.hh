@@ -4,10 +4,10 @@
 #include <fast_io/fast_io_dsal/vector.h>
 #include <fast_io/fast_io_dsal/string.h>
 #include <fast_io/fast_io_dsal/string_view.h>
+#include <exception/exception.hh>
 #include "heap_guard.hh"
 #include "astnode/basic.hh"
 #include "astnode/html.hh"
-#include "exception/exception.hh"
 #include "pltxt2htm/astnode/plext.hh"
 #include "push_macro.hh"
 
@@ -18,7 +18,7 @@ namespace details {
 /**
  * @return pltext[i]
  */
-template<bool ndebug, bool disable_log>
+template<bool ndebug>
 #if __has_cpp_attribute(__gnu__::always_inline)
 [[__gnu__::always_inline]]
 #elif __has_cpp_attribute(msvc::forceinline)
@@ -81,7 +81,7 @@ consteval char8_t pack_indexing_char8_t() noexcept {
  * @param str: The string to be checked.
  * @return Whether the string is a prefix of the pl-text.
  */
-template<bool ndebug, bool disable_log, char8_t... prefix_str>
+template<bool ndebug, char8_t... prefix_str>
     requires ((prefix_str < 'A' || prefix_str > 'Z') && ...)
 #if __has_cpp_attribute(__gnu__::always_inline)
 [[__gnu__::always_inline]]
@@ -103,13 +103,13 @@ constexpr bool is_prefix_match(::fast_io::u8string_view str) noexcept {
                 // ASCII between lowercase and uppercase is 32 (e.g. 'a' - 'A' == 32)
                 constexpr char8_t diff{32};
                 // (expect != str[I] && expect != str[I] + diff) <=> (expect != (str[I] | diff))
-                if (expect != (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(str, I) | diff)) {
+                if (expect != (::pltxt2htm::details::u8string_view_index<ndebug>(str, I) | diff)) {
                     return false;
                 } else {
                     return true;
                 }
             } else {
-                if (expect != ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(str, I)) {
+                if (expect != ::pltxt2htm::details::u8string_view_index<ndebug>(str, I)) {
                     return false;
                 } else {
                     return true;
@@ -144,18 +144,20 @@ enum class ExternSyntaxType : ::std::uint_least32_t {
 /**
  * @brief Parse pl-text to nodes.
  * @tparam ndebug: Whether disables all debug checks.
- * @tparam disable_log: Whether disables all info printed before crashing.
  * @param pltext: The text readed from Quantum-Physics.
  * @param extern_syntax_type: show `enum class ExternSyntaxType`
  * @param extern_index: after parsing the current tag, extern index should be corrected.
  * @return Quantum-Physics text's ast.
  */
-template<bool ndebug, bool disable_log>
+template<bool ndebug>
 [[nodiscard]]
 constexpr auto parse_pltxt(
     ::fast_io::u8string_view pltext,
     ::pltxt2htm::details::ExternSyntaxType extern_syntax_type = ::pltxt2htm::details::ExternSyntaxType::none,
-    ::std::size_t* extern_index = nullptr) noexcept(disable_log == true)
+    ::std::size_t* extern_index = nullptr)
+#ifndef PLTXT2HTM_ENABLE_PRINT
+    noexcept
+#endif
     -> ::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltxt2htm::PlTxtNode>> {
     pltxt2htm_assert(
         (extern_syntax_type == ::pltxt2htm::details::ExternSyntaxType::none && extern_index == nullptr) ||
@@ -166,7 +168,7 @@ constexpr auto parse_pltxt(
 
     ::std::size_t const pltxt_size{pltext.size()};
     for (::std::size_t i{}; i < pltxt_size; ++i) {
-        char8_t const chr{::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, i)};
+        char8_t const chr{::pltxt2htm::details::u8string_view_index<ndebug>(pltext, i)};
 
         if (chr == u8'\n') {
             result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::Br>{});
@@ -196,7 +198,7 @@ constexpr auto parse_pltxt(
             }
 
             // a trie for tags
-            switch (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, i + 1)) {
+            switch (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, i + 1)) {
             case u8'a':
                 [[fallthrough]];
             case u8'A': {
@@ -208,7 +210,7 @@ constexpr auto parse_pltxt(
                     ::std::size_t forward_index{i + 2};
                     while (true) {
                         auto forward_chr =
-                            ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, forward_index);
+                            ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, forward_index);
                         if (forward_chr == u8'>') {
                             break;
                         } else if (forward_chr != ' ') {
@@ -225,7 +227,7 @@ constexpr auto parse_pltxt(
                     if (i + 1 < pltxt_size) {
                         // if forward_index + 1 >= pltxt_size, it means that a not closed tag in the end of the text
                         // which does not make sense, can be opetimized(ignored) during parsing ast
-                        auto subast = ::pltxt2htm::details::parse_pltxt<ndebug, disable_log>(
+                        auto subast = ::pltxt2htm::details::parse_pltxt<ndebug>(
                             ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 1),
                             ::pltxt2htm::details::ExternSyntaxType::pl_a, ::std::addressof(i));
                         result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::Color>(
@@ -240,7 +242,7 @@ constexpr auto parse_pltxt(
                 [[fallthrough]];
             case u8'B': {
                 // parsing: <br>, <bR  >, <BR/>, <br  />
-                if (::pltxt2htm::details::is_prefix_match<ndebug, disable_log, u8'r'>(
+                if (::pltxt2htm::details::is_prefix_match<ndebug, u8'r'>(
                         ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 2)) == false) {
                     goto not_valid_tag;
                 }
@@ -248,13 +250,13 @@ constexpr auto parse_pltxt(
                     ::std::size_t forward_index{i + 3};
                     while (true) {
                         char8_t const forward_chr{
-                            ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, forward_index)};
+                            ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, forward_index)};
                         if (forward_chr == u8'>') {
                             i = forward_index;
                             result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::Br>{});
                             goto complete_parsing_tag;
                         } else if (forward_chr == u8'/' && forward_index + 1 < pltxt_size &&
-                                   ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                   ::pltxt2htm::details::u8string_view_index<ndebug>(
                                        pltext, forward_index + 1) == u8'>') {
                             i = forward_index + 1;
                             result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::Br>{});
@@ -277,7 +279,7 @@ constexpr auto parse_pltxt(
                 [[fallthrough]];
             case u8'C': {
                 // parsing: <color=$1>$2</color>
-                if (::pltxt2htm::details::is_prefix_match<ndebug, disable_log, u8'o', u8'l', u8'o', u8'r', u8'='>(
+                if (::pltxt2htm::details::is_prefix_match<ndebug, u8'o', u8'l', u8'o', u8'r', u8'='>(
                         u8string_view_subview<ndebug>(pltext, i + 2)) == false) {
                     goto not_valid_tag;
                 }
@@ -286,7 +288,7 @@ constexpr auto parse_pltxt(
                     ::fast_io::u8string color{};
                     while (true) {
                         char8_t const forward_chr{
-                            ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, forward_index)};
+                            ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, forward_index)};
                         if (forward_chr == u8'>') {
                             break;
                         } else if (forward_chr == u8' ') {
@@ -295,10 +297,10 @@ constexpr auto parse_pltxt(
                                     goto not_valid_tag;
                                 }
 
-                                if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                         pltext, forward_index + 1) == u8' ') {
                                     ++forward_index;
-                                } else if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                } else if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                                pltext, forward_index + 1) == u8'>') {
                                     ++forward_index;
                                     break;
@@ -321,7 +323,7 @@ constexpr auto parse_pltxt(
                     if (i + 1 < pltxt_size) {
                         // if forward_index + 1 >= pltxt_size, it means that a not closed tag in the end of the text
                         // which does not make sense, can be opetimized(ignored) during parsing ast
-                        auto subast = ::pltxt2htm::details::parse_pltxt<ndebug, disable_log>(
+                        auto subast = ::pltxt2htm::details::parse_pltxt<ndebug>(
                             ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 1),
                             ::pltxt2htm::details::ExternSyntaxType::pl_color, ::std::addressof(i));
                         result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::Color>(::std::move(subast),
@@ -336,7 +338,7 @@ constexpr auto parse_pltxt(
                 [[fallthrough]];
             case u8'D': {
                 // parsing: <discussion=$1>$2</discussion>
-                if (::pltxt2htm::details::is_prefix_match<ndebug, disable_log, u8'i', u8's', u8'c', u8'u', u8's', u8's',
+                if (::pltxt2htm::details::is_prefix_match<ndebug, u8'i', u8's', u8'c', u8'u', u8's', u8's',
                                                           u8'i', u8'o', u8'n', u8'='>(
                         ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 2)) == false) {
                     goto not_valid_tag;
@@ -346,7 +348,7 @@ constexpr auto parse_pltxt(
                     ::fast_io::u8string id{};
                     while (true) {
                         char8_t const forward_chr{
-                            ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, forward_index)};
+                            ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, forward_index)};
                         if (forward_chr == u8'>') {
                             break;
                         } else if (forward_chr == u8' ') {
@@ -355,10 +357,10 @@ constexpr auto parse_pltxt(
                                     goto not_valid_tag;
                                 }
 
-                                if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                         pltext, forward_index + 1) == u8' ') {
                                     ++forward_index;
-                                } else if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                } else if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                                pltext, forward_index + 1) == u8'>') {
                                     ++forward_index;
                                     break;
@@ -381,7 +383,7 @@ constexpr auto parse_pltxt(
                     if (i + 1 < pltxt_size) {
                         // if forward_index + 1 >= pltxt_size, it means that a not closed tag in the end of the text
                         // which does not make sense, can be opetimized(ignored) during parsing ast
-                        auto subast = ::pltxt2htm::details::parse_pltxt<ndebug, disable_log>(
+                        auto subast = ::pltxt2htm::details::parse_pltxt<ndebug>(
                             ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 1),
                             ::pltxt2htm::details::ExternSyntaxType::pl_discussion, ::std::addressof(i));
                         result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::Discussion>(::std::move(subast),
@@ -396,7 +398,7 @@ constexpr auto parse_pltxt(
                 [[fallthrough]];
             case u8'E': {
                 // parsing: <experiment=$1>$2</experiment>
-                if (::pltxt2htm::details::is_prefix_match<ndebug, disable_log, u8'x', u8'p', u8'e', u8'r', u8'i', u8'm',
+                if (::pltxt2htm::details::is_prefix_match<ndebug, u8'x', u8'p', u8'e', u8'r', u8'i', u8'm',
                                                           u8'e', u8'n', u8't', u8'='>(
                         ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 2)) == false) {
                     goto not_valid_tag;
@@ -406,7 +408,7 @@ constexpr auto parse_pltxt(
                     ::fast_io::u8string id{};
                     while (true) {
                         char8_t const forward_chr{
-                            ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, forward_index)};
+                            ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, forward_index)};
                         if (forward_chr == u8'>') {
                             break;
                         } else if (forward_chr == u8' ') {
@@ -415,10 +417,10 @@ constexpr auto parse_pltxt(
                                     goto not_valid_tag;
                                 }
 
-                                if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                         pltext, forward_index + 1) == u8' ') {
                                     ++forward_index;
-                                } else if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                } else if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                                pltext, forward_index + 1) == u8'>') {
                                     ++forward_index;
                                     break;
@@ -441,7 +443,7 @@ constexpr auto parse_pltxt(
                     if (i + 1 < pltxt_size) {
                         // if forward_index + 1 >= pltxt_size, it means that a not closed tag in the end of the text
                         // which does not make sense, can be opetimized(ignored) during parsing ast
-                        auto subast = ::pltxt2htm::details::parse_pltxt<ndebug, disable_log>(
+                        auto subast = ::pltxt2htm::details::parse_pltxt<ndebug>(
                             ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 1),
                             ::pltxt2htm::details::ExternSyntaxType::pl_experiment, ::std::addressof(i));
                         result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::Experiment>(::std::move(subast),
@@ -456,7 +458,7 @@ constexpr auto parse_pltxt(
                 switch (extern_syntax_type) {
                 case ::pltxt2htm::details::ExternSyntaxType::pl_color: {
                     // parsing </color>
-                    if (::pltxt2htm::details::is_prefix_match<ndebug, disable_log, u8'c', u8'o', u8'l', u8'o', u8'r'>(
+                    if (::pltxt2htm::details::is_prefix_match<ndebug, u8'c', u8'o', u8'l', u8'o', u8'r'>(
                             ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 2)) == false) {
                         goto not_valid_tag;
                     }
@@ -464,7 +466,7 @@ constexpr auto parse_pltxt(
                         ::std::size_t forward_index{i + 7};
                         while (true) {
                             char8_t const forward_chr{
-                                ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, forward_index)};
+                                ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, forward_index)};
                             if (forward_chr == u8'>') {
                                 break;
                             } else if (forward_chr == u8' ') {
@@ -473,10 +475,10 @@ constexpr auto parse_pltxt(
                                         goto not_valid_tag;
                                     }
 
-                                    if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                    if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                             pltext, forward_index + 1) == u8' ') {
                                         ++forward_index;
-                                    } else if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                    } else if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                                    pltext, forward_index + 1) == u8'>') {
                                         ++forward_index;
                                         break;
@@ -504,7 +506,7 @@ constexpr auto parse_pltxt(
                     ::exception::unreachable<ndebug>();
                 }
                 case ::pltxt2htm::details::ExternSyntaxType::pl_a: {
-                    if (::pltxt2htm::details::is_prefix_match<ndebug, disable_log, u8'a'>(
+                    if (::pltxt2htm::details::is_prefix_match<ndebug, u8'a'>(
                             ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 2)) == false) {
                         goto not_valid_tag;
                     }
@@ -512,7 +514,7 @@ constexpr auto parse_pltxt(
                         ::std::size_t forward_index{i + 3};
                         while (true) {
                             char8_t const forward_chr{
-                                ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, forward_index)};
+                                ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, forward_index)};
                             if (forward_chr == u8'>') {
                                 break;
                             } else if (forward_chr == u8' ') {
@@ -521,10 +523,10 @@ constexpr auto parse_pltxt(
                                         goto not_valid_tag;
                                     }
 
-                                    if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                    if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                             pltext, forward_index + 1) == u8' ') {
                                         ++forward_index;
-                                    } else if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                    } else if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                                    pltext, forward_index + 1) == u8'>') {
                                         ++forward_index;
                                         break;
@@ -550,7 +552,7 @@ constexpr auto parse_pltxt(
                 }
                 case ::pltxt2htm::details::ExternSyntaxType::pl_discussion: {
                     // parsing </discussion>
-                    if (::pltxt2htm::details::is_prefix_match<ndebug, disable_log, u8'd', u8'i', u8's', u8'c', u8'u',
+                    if (::pltxt2htm::details::is_prefix_match<ndebug, u8'd', u8'i', u8's', u8'c', u8'u',
                                                               u8's', u8's', u8'i', u8'o', u8'n'>(
                             ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 2)) == false) {
                         goto not_valid_tag;
@@ -559,7 +561,7 @@ constexpr auto parse_pltxt(
                         ::std::size_t forward_index{i + 12};
                         while (true) {
                             char8_t const forward_chr{
-                                ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, forward_index)};
+                                ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, forward_index)};
                             if (forward_chr == u8'>') {
                                 break;
                             } else if (forward_chr == u8' ') {
@@ -568,10 +570,10 @@ constexpr auto parse_pltxt(
                                         goto not_valid_tag;
                                     }
 
-                                    if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                    if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                             pltext, forward_index + 1) == u8' ') {
                                         ++forward_index;
-                                    } else if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                    } else if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                                    pltext, forward_index + 1) == u8'>') {
                                         ++forward_index;
                                         break;
@@ -600,7 +602,7 @@ constexpr auto parse_pltxt(
                 }
                 case ::pltxt2htm::details::ExternSyntaxType::pl_experiment: {
                     // parsing </experiment>
-                    if (::pltxt2htm::details::is_prefix_match<ndebug, disable_log, u8'e', u8'x', u8'p', u8'e', u8'r',
+                    if (::pltxt2htm::details::is_prefix_match<ndebug, u8'e', u8'x', u8'p', u8'e', u8'r',
                                                               u8'i', u8'm', u8'e', u8'n', u8't'>(
                             ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 2)) == false) {
                         goto not_valid_tag;
@@ -609,7 +611,7 @@ constexpr auto parse_pltxt(
                         ::std::size_t forward_index{i + 12};
                         while (true) {
                             char8_t const forward_chr{
-                                ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, forward_index)};
+                                ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, forward_index)};
                             if (forward_chr == u8'>') {
                                 break;
                             } else if (forward_chr == u8' ') {
@@ -618,10 +620,10 @@ constexpr auto parse_pltxt(
                                         goto not_valid_tag;
                                     }
 
-                                    if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                    if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                             pltext, forward_index + 1) == u8' ') {
                                         ++forward_index;
-                                    } else if (::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(
+                                    } else if (::pltxt2htm::details::u8string_view_index<ndebug>(
                                                    pltext, forward_index + 1) == u8'>') {
                                         ++forward_index;
                                         break;
@@ -676,7 +678,7 @@ constexpr auto parse_pltxt(
 
                 result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::U8Char>{chr});
                 result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::U8Char>{
-                    ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, i + 1)});
+                    ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, i + 1)});
                 i += 1;
             } else if ((chr & 0b1110'0000) == 0b1110'0000 && (chr & 0b0001'0000) == 0) {
                 pltxt2htm_assert(i + 2 < pltxt_size, "Invalid utf-8 encoding");
@@ -684,33 +686,24 @@ constexpr auto parse_pltxt(
 
                 result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::U8Char>{chr});
                 result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::U8Char>{
-                    ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, i + 1)});
+                    ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, i + 1)});
                 result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::U8Char>{
-                    ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, i + 2)});
+                    ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, i + 2)});
                 i += 2;
             } else if ((chr & 0b1111'0000) == 0b1111'0000 && (chr & 0b0000'1000) == 0) {
                 pltxt2htm_assert(i + 3 < pltxt_size, "Invalid utf-8 encoding");
 
                 result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::U8Char>{chr});
                 result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::U8Char>{
-                    ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, i + 1)});
+                    ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, i + 1)});
                 result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::U8Char>{
-                    ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, i + 2)});
+                    ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, i + 2)});
                 result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::U8Char>{
-                    ::pltxt2htm::details::u8string_view_index<ndebug, disable_log>(pltext, i + 3)});
+                    ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, i + 3)});
                 i += 3;
             } else [[unlikely]] {
                 // invalid utf-8 encoding
-                if constexpr (ndebug && disable_log) {
-                    ::exception::unreachable<true>();
-                } else {
-                    if constexpr (ndebug == false) {
-                        ::exception::terminate();
-                    }
-                    if constexpr (disable_log == false) {
-                        // ::fast_io::perrln("Invalid utf-8 encoding");
-                    }
-                }
+                ::exception::unreachable<ndebug>();
             }
         }
     }
@@ -729,10 +722,14 @@ constexpr auto parse_pltxt(
  * @tparam disable_log: Whether or not to disable print info before crashing.
  * @param pltext: The text readed from Quantum-Physics.
  */
-template<bool ndebug, bool disable_log>
+template<bool ndebug>
 [[nodiscard]]
-constexpr auto parse_pltxt(::fast_io::u8string_view pltext) noexcept(disable_log == true) {
-    return ::pltxt2htm::details::parse_pltxt<ndebug, disable_log>(pltext);
+constexpr auto parse_pltxt(::fast_io::u8string_view pltext)
+#ifndef PLTXT2HTM_ENABLE_PRINT
+    noexcept
+#endif
+{
+    return ::pltxt2htm::details::parse_pltxt<ndebug>(pltext);
 }
 
 } // namespace pltxt2htm

@@ -4,7 +4,9 @@
  *       therefore, do not `#pragma once`
  */
 
-#include "panic.hh"
+#ifdef PLTXT2HTM_ENABLE_PRINT
+    #include "panic.hh"
+#endif
 
 #pragma push_macro("pltxt2htm_assert")
 #undef pltxt2htm_assert
@@ -12,15 +14,23 @@
  * @brief Assert whether the condition expression is true, if not, print
  *         the message and terminate the program.
  */
-#define pltxt2htm_assert(condition, message) \
-    do { \
-        if constexpr (ndebug == false || disable_log == false) { \
+#ifdef PLTXT2HTM_ENABLE_PRINT
+    #define pltxt2htm_assert(condition, message) \
+        do { \
             if ((condition) == false) [[unlikely]] { \
-                if constexpr (disable_log == false) { \
-                } \
+                panic_print(); \
                 if constexpr (ndebug == false) { \
                     ::exception::terminate(); \
                 } \
             } \
-        } \
-    } while (0)
+        } while (0)
+#else
+    #define pltxt2htm_assert(condition, _) \
+        do { \
+            if constexpr (ndebug == false) { \
+                if ((condition) == false) [[unlikely]] { \
+                    ::exception::terminate(); \
+                } \
+            } \
+        } while (0)
+#endif
