@@ -244,6 +244,43 @@ constexpr bool try_parse_self_closing_tag(::fast_io::u8string_view pltext, ::std
 }
 
 /**
+ * @brief Parsing markdown ATX headings
+ */
+template<bool ndebug>
+[[nodiscard]]
+constexpr bool try_parse_md_atx_heading(::fast_io::u8string_view pltext, ::std::size_t& out_index) noexcept {
+    ::std::size_t const pltext_size{pltext.size()};
+    ::std::size_t index{};
+    while (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, index) == u8' ') {
+        if (index >= pltext_size) {
+            return false;
+        }
+        ++index;
+    }
+
+    ::std::size_t header_level{};
+    while (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, index) == u8'#') {
+        if (index >= pltext_size) {
+            return false;
+        }
+        ++index;
+        ++header_level;
+    }
+    if (header_level == 0 || header_level > 6 ||
+        ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, index) != u8' ') {
+        return false;
+    }
+    ::std::size_t end_index{index};
+    while (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, end_index) != u8'\n' &&
+           !::pltxt2htm::details::try_parse_self_closing_tag<ndebug, u8'r'>(pltext, end_index)) {
+        if (end_index >= pltext_size) {
+            return false;
+        }
+        ++end_index;
+    }
+}
+
+/**
  * @brief Convert a string to a ::std::size_t.
  */
 [[nodiscard]]
