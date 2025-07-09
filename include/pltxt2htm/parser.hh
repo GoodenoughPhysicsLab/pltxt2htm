@@ -248,7 +248,7 @@ constexpr bool try_parse_self_closing_tag(::fast_io::u8string_view pltext, ::std
  */
 template<bool ndebug>
 [[nodiscard]]
-constexpr bool try_parse_md_atx_heading(::fast_io::u8string_view pltext, ::std::size_t& out_index) noexcept {
+constexpr bool try_parse_md_atx_heading(::fast_io::u8string_view pltext, ::std::size_t& extern_index) noexcept {
     ::std::size_t const pltext_size{pltext.size()};
     ::std::size_t index{};
     while (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, index) == u8' ') {
