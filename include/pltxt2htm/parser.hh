@@ -46,12 +46,13 @@ template<bool ndebug>
 [[msvc::forceinline]]
 #endif
 [[nodiscard]]
-constexpr auto u8string_view_subview(::fast_io::u8string_view pltext, ::std::size_t i) noexcept
+constexpr auto u8string_view_subview(::fast_io::u8string_view pltext, ::std::size_t i,
+                                     ::std::size_t count = ::fast_io::containers::npos) noexcept
     -> ::fast_io::u8string_view {
     if constexpr (ndebug) {
-        return pltext.subview_unchecked(i);
+        return pltext.subview_unchecked(i, count);
     } else {
-        return pltext.subview(i);
+        return pltext.subview(i, count);
     }
 }
 
@@ -245,39 +246,53 @@ constexpr bool try_parse_self_closing_tag(::fast_io::u8string_view pltext, ::std
 
 /**
  * @brief Parsing markdown ATX headings
+ * TODO more notes
  */
 template<bool ndebug>
 [[nodiscard]]
-constexpr bool try_parse_md_atx_heading(::fast_io::u8string_view pltext, ::std::size_t& extern_index) noexcept {
+constexpr bool try_parse_md_atx_heading(::fast_io::u8string_view pltext, ::std::size_t& start_index_,
+                                        ::std::size_t& end_index_, ::std::size_t& header_level_)
+#if __cpp_exceptions < 199711L
+    noexcept
+#endif
+{
     ::std::size_t const pltext_size{pltext.size()};
-    ::std::size_t index{};
-    while (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, index) == u8' ') {
-        if (index >= pltext_size) {
+    ::std::size_t start_index{};
+    while (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, start_index) == u8' ') {
+        if (start_index >= pltext_size) {
             return false;
         }
-        ++index;
+        ++start_index;
     }
 
+    // count how many `#` characters
     ::std::size_t header_level{};
-    while (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, index) == u8'#') {
-        if (index >= pltext_size) {
+    while (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, start_index) == u8'#') {
+        if (start_index >= pltext_size) {
             return false;
         }
-        ++index;
+        ++start_index;
         ++header_level;
     }
     if (header_level == 0 || header_level > 6 ||
-        ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, index) != u8' ') {
+        ::pltxt2htm::details::u8string_view_index<ndebug>(pltext, start_index) != u8' ') {
+        // invalid atx header
         return false;
     }
-    ::std::size_t end_index{index};
+    ++start_index;
+    // end of the atx header
+    ::std::size_t end_index{start_index};
     while (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, end_index) != u8'\n' &&
            !::pltxt2htm::details::try_parse_self_closing_tag<ndebug, u8'r'>(pltext, end_index)) {
         if (end_index >= pltext_size) {
-            return false;
+            break;
         }
         ++end_index;
     }
+    start_index_ = start_index;
+    end_index_ = end_index;
+    header_level_ = header_level;
+    return true;
 }
 
 /**
@@ -330,7 +345,22 @@ constexpr auto parse_pltxt(::fast_io::u8string_view pltext,
         char8_t const chr{::pltxt2htm::details::u8string_view_index<ndebug>(pltext, i)};
 
         if (chr == u8'\n') {
-            result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::LineBreak>{});
+#if __has_cpp_attribute(indeterminate)
+            ::std::size_t start_index [[indeterminate]];
+            ::std::size_t end_index [[indeterminate]];
+            ::std::size_t header_level [[indeterminate]];
+#else
+            ::std::size_t start_index;
+            ::std::size_t end_index;
+            ::std::size_t header_level;
+#endif
+            if (::pltxt2htm::details::try_parse_md_atx_heading<ndebug>(
+                    ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 1), start_index, end_index,
+                    header_level)) {
+                //
+            } else {
+                result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::LineBreak>{});
+            }
             continue;
         } else if (chr == u8' ') {
             // TODO should we delete tail space?
