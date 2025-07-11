@@ -354,7 +354,7 @@ constexpr auto parse_pltxt(::fast_io::u8string_view pltext,
             ::std::size_t end_index;
             ::std::size_t header_level;
 #endif
-            if (::pltxt2htm::details::try_parse_md_atx_heading<ndebug>(
+            if (i + 1 < pltxt_size && ::pltxt2htm::details::try_parse_md_atx_heading<ndebug>(
                     ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 1), start_index, end_index,
                     header_level)) {
                 //
