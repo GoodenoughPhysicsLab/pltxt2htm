@@ -251,7 +251,7 @@ constexpr bool try_parse_self_closing_tag(::fast_io::u8string_view pltext, ::std
 template<bool ndebug>
 [[nodiscard]]
 constexpr bool try_parse_md_atx_heading(::fast_io::u8string_view pltext, ::std::size_t& start_index_,
-                                        ::std::size_t& end_index_, ::std::size_t& header_level_)
+                                        ::std::size_t& sublength_, ::std::size_t& header_level_)
 #if __cpp_exceptions < 199711L
     noexcept
 #endif
@@ -281,16 +281,18 @@ constexpr bool try_parse_md_atx_heading(::fast_io::u8string_view pltext, ::std::
     }
     ++start_index;
     // end of the atx header
-    ::std::size_t end_index{start_index};
-    while (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, end_index) != u8'\n' &&
-           !::pltxt2htm::details::try_parse_self_closing_tag<ndebug, u8'r'>(pltext, end_index)) {
-        if (end_index >= pltext_size) {
+    ::std::size_t sublength{start_index};
+    ::std::size_t _;
+    while (::pltxt2htm::details::u8string_view_index<ndebug>(pltext, sublength) != u8'\n' &&
+           !::pltxt2htm::details::try_parse_self_closing_tag<ndebug, u8'<', u8'b', u8'r'>(
+               ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, sublength), _)) {
+        if (sublength >= pltext_size) {
             break;
         }
-        ++end_index;
+        ++sublength;
     }
     start_index_ = start_index;
-    end_index_ = end_index;
+    sublength_ = sublength;
     header_level_ = header_level;
     return true;
 }
@@ -351,13 +353,16 @@ constexpr auto parse_pltxt(::fast_io::u8string_view pltext,
             ::std::size_t header_level [[indeterminate]];
 #else
             ::std::size_t start_index;
-            ::std::size_t end_index;
+            ::std::size_t sublength;
             ::std::size_t header_level;
 #endif
             if (i + 1 < pltxt_size && ::pltxt2htm::details::try_parse_md_atx_heading<ndebug>(
-                    ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 1), start_index, end_index,
-                    header_level)) {
-                //
+                                          ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 1),
+                                          start_index, sublength, header_level)) {
+                auto subtext = ::pltxt2htm::details::u8string_view_subview<ndebug>(pltext, i + 1 + start_index,
+                                                                                   sublength - start_index);
+                auto subast = ::pltxt2htm::details::parse_pltxt<ndebug>(subtext, ::pltxt2htm::NodeType::pl_a,
+                                                                        ::std::addressof(i));
             } else {
                 result.push_back(::pltxt2htm::details::HeapGuard<::pltxt2htm::LineBreak>{});
             }
