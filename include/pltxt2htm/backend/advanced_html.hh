@@ -262,7 +262,9 @@ constexpr auto ast2advanced_html(::fast_io::vector<::pltxt2htm::details::HeapGua
             result.append(u8"<br>");
             break;
         }
-        case ::pltxt2htm::NodeType::html_h1: {
+        case ::pltxt2htm::NodeType::html_h1:
+            [[fallthrough]];
+        case ::pltxt2htm::NodeType::md_atx_h1: {
             auto h1 = reinterpret_cast<::pltxt2htm::details::PairedTagBase const*>(node.release_imul());
             bool const is_not_same_tag =
                 extern_node == nullptr || extern_node->node_type() != ::pltxt2htm::NodeType::html_h1;
@@ -275,7 +277,9 @@ constexpr auto ast2advanced_html(::fast_io::vector<::pltxt2htm::details::HeapGua
             }
             break;
         }
-        case ::pltxt2htm::NodeType::html_h2: {
+        case ::pltxt2htm::NodeType::html_h2:
+            [[fallthrough]];
+        case ::pltxt2htm::NodeType::md_atx_h2: {
             auto h2 = reinterpret_cast<::pltxt2htm::details::PairedTagBase const*>(node.release_imul());
             bool const is_not_same_tag =
                 extern_node == nullptr || extern_node->node_type() != ::pltxt2htm::NodeType::html_h2;
@@ -288,7 +292,9 @@ constexpr auto ast2advanced_html(::fast_io::vector<::pltxt2htm::details::HeapGua
             }
             break;
         }
-        case ::pltxt2htm::NodeType::html_h3: {
+        case ::pltxt2htm::NodeType::html_h3:
+            [[fallthrough]];
+        case ::pltxt2htm::NodeType::md_atx_h3: {
             auto h3 = reinterpret_cast<::pltxt2htm::details::PairedTagBase const*>(node.release_imul());
             bool const is_not_same_tag =
                 extern_node == nullptr || extern_node->node_type() != ::pltxt2htm::NodeType::html_h3;
@@ -301,7 +307,9 @@ constexpr auto ast2advanced_html(::fast_io::vector<::pltxt2htm::details::HeapGua
             }
             break;
         }
-        case ::pltxt2htm::NodeType::html_h4: {
+        case ::pltxt2htm::NodeType::html_h4:
+            [[fallthrough]];
+        case ::pltxt2htm::NodeType::md_atx_h4: {
             auto h4 = reinterpret_cast<::pltxt2htm::details::PairedTagBase const*>(node.release_imul());
             bool const is_not_same_tag =
                 extern_node == nullptr || extern_node->node_type() != ::pltxt2htm::NodeType::html_h4;
@@ -314,7 +322,9 @@ constexpr auto ast2advanced_html(::fast_io::vector<::pltxt2htm::details::HeapGua
             }
             break;
         }
-        case ::pltxt2htm::NodeType::html_h5: {
+        case ::pltxt2htm::NodeType::html_h5:
+            [[fallthrough]];
+        case ::pltxt2htm::NodeType::md_atx_h5: {
             auto h5 = reinterpret_cast<::pltxt2htm::details::PairedTagBase const*>(node.release_imul());
             bool const is_not_same_tag =
                 extern_node == nullptr || extern_node->node_type() != ::pltxt2htm::NodeType::html_h5;
@@ -327,7 +337,9 @@ constexpr auto ast2advanced_html(::fast_io::vector<::pltxt2htm::details::HeapGua
             }
             break;
         }
-        case ::pltxt2htm::NodeType::html_h6: {
+        case ::pltxt2htm::NodeType::html_h6:
+            [[fallthrough]];
+        case ::pltxt2htm::NodeType::md_atx_h6: {
             auto h6 = reinterpret_cast<::pltxt2htm::details::PairedTagBase const*>(node.release_imul());
             bool const is_not_same_tag =
                 extern_node == nullptr || extern_node->node_type() != ::pltxt2htm::NodeType::html_h6;

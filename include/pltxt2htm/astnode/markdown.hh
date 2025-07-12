@@ -13,13 +13,13 @@ public:
     constexpr AtxH1() noexcept = delete;
 
     constexpr AtxH1(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltxt2htm::PlTxtNode>>&& subast) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h1, ::std::move(subast)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h1, ::std::move(subast)} {
     }
 
     constexpr AtxH1(::pltxt2htm::AtxH1 const&) noexcept = default;
 
     constexpr AtxH1(::pltxt2htm::AtxH1&& other) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h1, ::std::move(other.subast_)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h1, ::std::move(other.subast_)} {
     }
 
     constexpr ~AtxH1() noexcept = default;
@@ -37,13 +37,13 @@ public:
     constexpr AtxH2() noexcept = delete;
 
     constexpr AtxH2(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltxt2htm::PlTxtNode>>&& subast) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h2, ::std::move(subast)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h2, ::std::move(subast)} {
     }
 
     constexpr AtxH2(::pltxt2htm::AtxH2 const&) noexcept = default;
 
     constexpr AtxH2(::pltxt2htm::AtxH2&& other) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h2, ::std::move(other.subast_)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h2, ::std::move(other.subast_)} {
     }
 
     constexpr ~AtxH2() noexcept = default;
@@ -61,13 +61,13 @@ public:
     constexpr AtxH3() noexcept = delete;
 
     constexpr AtxH3(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltxt2htm::PlTxtNode>>&& subast) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h3, ::std::move(subast)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h3, ::std::move(subast)} {
     }
 
     constexpr AtxH3(::pltxt2htm::AtxH3 const&) noexcept = default;
 
     constexpr AtxH3(::pltxt2htm::AtxH3&& other) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h3, ::std::move(other.subast_)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h3, ::std::move(other.subast_)} {
     }
 
     constexpr ~AtxH3() noexcept = default;
@@ -85,13 +85,13 @@ public:
     constexpr AtxH4() noexcept = delete;
 
     constexpr AtxH4(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltxt2htm::PlTxtNode>>&& subast) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h4, ::std::move(subast)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h4, ::std::move(subast)} {
     }
 
     constexpr AtxH4(::pltxt2htm::AtxH4 const&) noexcept = default;
 
     constexpr AtxH4(::pltxt2htm::AtxH4&& other) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h4, ::std::move(other.subast_)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h4, ::std::move(other.subast_)} {
     }
 
     constexpr ~AtxH4() noexcept = default;
@@ -109,13 +109,13 @@ public:
     constexpr AtxH5() noexcept = delete;
 
     constexpr AtxH5(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltxt2htm::PlTxtNode>>&& subast) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h5, ::std::move(subast)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h5, ::std::move(subast)} {
     }
 
     constexpr AtxH5(::pltxt2htm::AtxH5 const&) noexcept = default;
 
     constexpr AtxH5(::pltxt2htm::AtxH5&& other) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h5, ::std::move(other.subast_)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h5, ::std::move(other.subast_)} {
     }
 
     constexpr ~AtxH5() noexcept = default;
@@ -133,13 +133,13 @@ public:
     constexpr AtxH6() noexcept = delete;
 
     constexpr AtxH6(::fast_io::vector<::pltxt2htm::details::HeapGuard<::pltxt2htm::PlTxtNode>>&& subast) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h6, ::std::move(subast)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h6, ::std::move(subast)} {
     }
 
     constexpr AtxH6(::pltxt2htm::AtxH6 const&) noexcept = default;
 
     constexpr AtxH6(::pltxt2htm::AtxH6&& other) noexcept
-        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::html_h6, ::std::move(other.subast_)} {
+        : ::pltxt2htm::details::PairedTagBase{::pltxt2htm::NodeType::md_atx_h6, ::std::move(other.subast_)} {
     }
 
     constexpr ~AtxH6() noexcept = default;
