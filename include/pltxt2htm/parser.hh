@@ -516,6 +516,12 @@ constexpr ::exception::optional<std::size_t> u8str2size_t(::fast_io::u8string_vi
     return result;
 }
 
+struct ParsePltxtFrameContext {
+    ::fast_io::u8string_view pltext;
+    ::pltxt2htm::NodeType nested_tag_type;
+    ::std::size_t current_index;
+};
+
 /**
  * @brief Parse pl-text to nodes.
  * @tparam ndebug: Whether disables all debug checks.
